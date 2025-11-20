@@ -8,7 +8,7 @@ export function GameHUD() {
   return (
     <div className="w-full max-w-[800px]">
       <div className="mb-4 rounded-lg border border-border bg-card p-4">
-        <h1 className="mb-4 text-2xl font-bold">Every Extend Extra</h1>
+        <h1 className="mb-4 text-2xl font-bold">Copilot Extend Extra</h1>
 
         <div className="grid grid-cols-2 gap-4 text-sm md:grid-cols-4">
           <div>
