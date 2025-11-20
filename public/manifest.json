@@ -1,0 +1,18 @@
+{
+  "name": "Copilot Extend Extra",
+  "short_name": "Copilot Extend Extra",
+  "description": "A game built with Next.js and GitHub Copilot",
+  "start_url": "/copilot-extend-extra/",
+  "display": "standalone",
+  "background_color": "#1f2937",
+  "theme_color": "#22c55e",
+  "icons": [
+    {
+      "src": "/copilot-extend-extra/game-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["games", "entertainment"]
+}
