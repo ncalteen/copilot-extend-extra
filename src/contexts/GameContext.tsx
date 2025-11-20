@@ -21,7 +21,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   const [gameState, setGameState] = React.useState<GameState>(
     createInitialGameState()
   )
-  const animationFrameRef = React.useRef<number>()
+  const animationFrameRef = React.useRef<number>(0)
   const lastUpdateRef = React.useRef<number>(Date.now())
 
   // Game loop
