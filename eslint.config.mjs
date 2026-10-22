@@ -1,19 +1,14 @@
-import { FlatCompat } from '@eslint/eslintrc'
 import js from '@eslint/js'
-import typescriptEslint from '@typescript-eslint/eslint-plugin'
 import tsParser from '@typescript-eslint/parser'
-import prettier from 'eslint-plugin-prettier'
+import nextVitals from 'eslint-config-next/core-web-vitals'
+import nextTypescript from 'eslint-config-next/typescript'
+import prettierRecommended from 'eslint-plugin-prettier/recommended'
 import globals from 'globals'
 import { dirname } from 'path'
 import { fileURLToPath } from 'url'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
-const compat = new FlatCompat({
-  baseDirectory: __dirname,
-  recommendedConfig: js.configs.recommended,
-  allConfig: js.configs.all
-})
 
 const eslintConfig = [
   {
@@ -26,19 +21,22 @@ const eslintConfig = [
       'next-env.d.ts'
     ]
   },
-  ...compat.extends(
-    'next/core-web-vitals',
-    'next/typescript',
-    'eslint:recommended',
-    'plugin:@typescript-eslint/eslint-recommended',
-    'plugin:@typescript-eslint/recommended',
-    'plugin:prettier/recommended'
-  ),
+  js.configs.recommended,
+  ...nextVitals,
+  ...nextTypescript,
+  prettierRecommended,
   {
-    plugins: {
-      prettier,
-      '@typescript-eslint': typescriptEslint
-    },
+    files: [
+      'src/contexts/GameContext.tsx',
+      'src/contexts/ThemeContext.tsx',
+      'src/contexts/ZoomContext.tsx'
+    ],
+    rules: {
+      // Preserve existing post-hydration storage reads and state synchronization.
+      'react-hooks/set-state-in-effect': 'off'
+    }
+  },
+  {
     languageOptions: {
       globals: {
         ...globals.node,

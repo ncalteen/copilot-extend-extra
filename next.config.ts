@@ -4,6 +4,8 @@ import { BASE_PATH } from './src/lib/config'
 const isProd = process.env.NODE_ENV === 'production'
 
 const nextConfig: NextConfig = {
+  // Keep repository-owned instructions unchanged when starting development.
+  agentRules: false,
   // Enable static export for GitHub Pages
   output: 'export',
   // Set base path for GitHub Pages deployment only in production
