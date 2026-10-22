@@ -162,6 +162,15 @@ Contributions are welcome! Please follow these guidelines:
 
 ### Development Guidelines
 
+- Next.js 16 uses Turbopack by default for development and production builds.
+- Keep `next` and `eslint-config-next` on the same version, and update React and
+  React DOM together with their TypeScript definitions.
+- ESLint uses the native Next.js flat configs plus Prettier; run `npm run lint`
+  separately because Next.js 16 does not run linting during builds.
+- Existing game, theme, and zoom contexts retain a scoped
+  `react-hooks/set-state-in-effect` exception for their state synchronization.
+- Automatic Next.js agent-rule generation is disabled to preserve the
+  repository's maintained instructions and avoid generated formatting changes.
 - Follow TypeScript strict mode
 - Use provided ESLint and Prettier configurations
 - Write comprehensive tests for new features
