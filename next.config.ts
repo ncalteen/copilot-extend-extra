@@ -15,9 +15,7 @@ const nextConfig: NextConfig = {
     unoptimized: true
   },
   // Trailing slash for GitHub Pages compatibility
-  trailingSlash: true,
-  // Disable server-side features for static export
-  distDir: 'out'
+  trailingSlash: true
 }
 
 export default nextConfig

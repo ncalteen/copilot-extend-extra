@@ -1,9 +1,7 @@
 name: Continuous Delivery
 
 on:
-  pull_request:
-    types:
-      - closed
+  push:
     branches:
       - main
   workflow_dispatch:
@@ -13,20 +11,20 @@ concurrency:
   cancel-in-progress: false
 
 permissions:
-  contents: write
-  id-token: write
-  pages: write
+  contents: read
 
 jobs:
   build:
     name: Build Site
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
-    # Only run this job if it was done manually or a non-dependabot PR is merged
-    if: |
-      github.event_name == 'workflow_dispatch' ||
-      (github.event.pull_request.merged == true &&
-      startsWith(github.head_ref, 'dependabot/') == false)
+    permissions:
+      contents: read
+      pages: read
+
+    # Manual runs must also deploy the production branch.
+    if: github.ref == 'refs/heads/main'
 
     steps:
       - name: Checkout
@@ -59,8 +57,6 @@ jobs:
 
       - name: Build
         id: build
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npm run build
 
       - name: Upload Pages Artifact
@@ -72,8 +68,13 @@ jobs:
   deploy:
     name: Deploy to GitHub Pages
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     needs: build
+
+    permissions:
+      pages: write
+      id-token: write
 
     environment:
       name: github-pages
@@ -89,6 +90,9 @@ jobs:
     runs-on: ubuntu-latest
 
     needs: build
+
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout

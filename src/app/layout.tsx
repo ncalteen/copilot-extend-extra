@@ -14,14 +14,15 @@ const geistMono = {
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://ncalteen.github.io/copilot-extend-extra'),
-  title: 'Copilot Extend Extra',
+  title: 'RE:ACT — Chain Reaction Arcade',
   description:
-    'A game built with Next.js and GitHub Copilot. Test your skills and see how high you can score!',
+    'One spark changes everything. An original chain-reaction arcade game: position, charge, detonate, and turn a single spark into a high score.',
   keywords: ['github copilot', 'nextjs', 'react', 'game'],
   authors: [{ name: 'Nick Alteen', url: 'https://github.com/ncalteen' }],
   openGraph: {
-    title: 'Copilot Extend Extra',
-    description: 'A game built with Next.js and GitHub Copilot',
+    title: 'RE:ACT — Chain Reaction Arcade',
+    description:
+      'One spark changes everything. Play a free chain-reaction arcade game.',
     type: 'website',
     url: 'https://ncalteen.github.io/copilot-extend-extra',
     siteName: 'GitHub Copilot Game',
@@ -36,8 +37,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary',
-    title: 'Copilot Extend Extra',
-    description: 'A game built with Next.js and GitHub Copilot'
+    title: 'RE:ACT — Chain Reaction Arcade',
+    description:
+      'One spark changes everything. Play a free chain-reaction arcade game.'
   },
   robots: 'index, follow'
 }

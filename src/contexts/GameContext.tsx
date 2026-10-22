@@ -1,159 +1,184 @@
 'use client'
 
 import * as React from 'react'
-import type { GameState, PlayerShip, Position } from '@/types/game'
+import type { GameMode, GameState, Position } from '@/types/game'
 import { GAME_CONFIG } from '@/lib/game/constants'
-import { updateGameLogic } from '@/lib/game/gameLogic'
+import {
+  canControl,
+  createInitialGameState,
+  detonatePlayer,
+  movePlayer,
+  updateGameLogic
+} from '@/lib/game/gameLogic'
 
 interface GameContextValue {
   gameState: GameState
+  bestScore: number
+  storageError: boolean
   startGame: () => void
   pauseGame: () => void
   resumeGame: () => void
   resetGame: () => void
-  updatePlayer: (position: Partial<Position>) => void
+  setMode: (mode: GameMode) => void
+  updatePlayer: (position: Position) => void
+  setMovement: (keys: Set<string>) => void
+  beginCharge: () => void
   triggerExplosion: () => void
 }
 
 const GameContext = React.createContext<GameContextValue | null>(null)
 
 export function GameProvider({ children }: { children: React.ReactNode }) {
-  const [gameState, setGameState] = React.useState<GameState>(
-    createInitialGameState()
-  )
-  const animationFrameRef = React.useRef<number>(0)
-  const lastUpdateRef = React.useRef<number>(Date.now())
+  const [gameState, setGameState] = React.useState(createInitialGameState)
+  const [bestScore, setBestScore] = React.useState(0)
+  const [storageError, setStorageError] = React.useState(false)
+  const movement = React.useRef(new Set<string>())
 
-  // Game loop
   React.useEffect(() => {
-    function gameLoop() {
-      const currentTime = Date.now()
-      setGameState((prev) => updateGameLogic(prev, currentTime))
-      lastUpdateRef.current = currentTime
-      animationFrameRef.current = requestAnimationFrame(gameLoop)
+    try {
+      const stored = Number(localStorage.getItem('react-arcade-best') ?? 0)
+      if (Number.isFinite(stored) && stored >= 0) setBestScore(stored)
+    } catch (error) {
+      console.warn('High score storage is unavailable.', error)
+      setStorageError(true)
     }
+  }, [])
 
-    if (!gameState.isPaused && !gameState.isGameOver) {
-      animationFrameRef.current = requestAnimationFrame(gameLoop)
+  React.useEffect(() => {
+    if (!gameState.isGameOver) return
+    setBestScore((best) => Math.max(best, gameState.score))
+    try {
+      const stored = Number(localStorage.getItem('react-arcade-best') ?? 0)
+      localStorage.setItem(
+        'react-arcade-best',
+        String(Math.max(Number.isFinite(stored) ? stored : 0, gameState.score))
+      )
+    } catch (error) {
+      console.warn('Could not save the high score.', error)
+      setStorageError(true)
     }
+  }, [gameState.isGameOver, gameState.score])
 
-    return () => {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current)
-      }
+  React.useEffect(() => {
+    if (gameState.isPaused || gameState.isGameOver) return
+    let frame = 0
+    let previous = performance.now()
+    function tick(time: number) {
+      const delta = Math.max(0, time - previous)
+      previous = time
+      setGameState((state) => {
+        const keys = movement.current
+        const x =
+          Number(keys.has('d') || keys.has('arrowright')) -
+          Number(keys.has('a') || keys.has('arrowleft'))
+        const y =
+          Number(keys.has('s') || keys.has('arrowdown')) -
+          Number(keys.has('w') || keys.has('arrowup'))
+        const distance =
+          (GAME_CONFIG.PLAYER_SPEED * Math.min(delta, 50)) /
+          1000 /
+          (Math.hypot(x, y) || 1)
+        const moved =
+          x || y
+            ? movePlayer(state, {
+                x: state.player.position.x + x * distance,
+                y: state.player.position.y + y * distance
+              })
+            : state
+        return updateGameLogic(moved, delta)
+      })
+      frame = requestAnimationFrame(tick)
     }
+    frame = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(frame)
   }, [gameState.isPaused, gameState.isGameOver])
 
   const startGame = React.useCallback(() => {
-    setGameState((prev) => ({ ...prev, isPaused: false, isGameOver: false }))
-    lastUpdateRef.current = Date.now()
-  }, [])
-
-  const pauseGame = React.useCallback(() => {
-    setGameState((prev) => ({ ...prev, isPaused: true }))
-  }, [])
-
-  const resumeGame = React.useCallback(() => {
-    setGameState((prev) => ({ ...prev, isPaused: false }))
-    lastUpdateRef.current = Date.now()
-  }, [])
-
-  const resetGame = React.useCallback(() => {
-    setGameState(createInitialGameState())
-    lastUpdateRef.current = Date.now()
-  }, [])
-
-  const updatePlayer = React.useCallback((position: Partial<Position>) => {
-    setGameState((prev) => ({
-      ...prev,
-      player: {
-        ...prev.player,
-        position: { ...prev.player.position, ...position }
-      }
+    movement.current.clear()
+    setGameState((state) => ({
+      ...createInitialGameState(state.mode),
+      hasStarted: true,
+      isPaused: false
     }))
   }, [])
-
-  const triggerExplosion = React.useCallback(() => {
-    setGameState((prev) => {
-      if (prev.player.isExploding) return prev
-
-      const currentTime = Date.now()
-
-      return {
-        ...prev,
-        player: {
-          ...prev.player,
-          isExploding: true,
-          explosionStartTime: currentTime
-        },
-        explosions: [
-          ...prev.explosions,
-          {
-            id: `explosion-${currentTime}-player`,
-            position: { ...prev.player.position },
-            radius: 0,
-            maxRadius: GAME_CONFIG.EXPLOSION_MAX_RADIUS,
-            startTime: currentTime,
-            duration: GAME_CONFIG.EXPLOSION_DURATION,
-            chainDepth: 0
-          }
-        ]
-      }
-    })
+  const pauseGame = React.useCallback(() => {
+    movement.current.clear()
+    setGameState((state) => ({
+      ...state,
+      isPaused: true,
+      player: { ...state.player, chargeStart: null }
+    }))
   }, [])
-
-  const contextValue: GameContextValue = {
-    gameState,
-    startGame,
-    pauseGame,
-    resumeGame,
-    resetGame,
-    updatePlayer,
-    triggerExplosion
-  }
+  const resumeGame = React.useCallback(
+    () =>
+      setGameState((state) =>
+        state.isGameOver || !state.hasStarted
+          ? state
+          : { ...state, isPaused: false }
+      ),
+    []
+  )
+  const resetGame = React.useCallback(() => {
+    movement.current.clear()
+    setGameState((state) => createInitialGameState(state.mode))
+  }, [])
+  const setMode = React.useCallback(
+    (mode: GameMode) =>
+      setGameState((state) =>
+        state.hasStarted && !state.isGameOver
+          ? state
+          : createInitialGameState(mode)
+      ),
+    []
+  )
+  const updatePlayer = React.useCallback(
+    (position: Position) =>
+      setGameState((state) => movePlayer(state, position)),
+    []
+  )
+  const setMovement = React.useCallback((keys: Set<string>) => {
+    movement.current = keys
+  }, [])
+  const beginCharge = React.useCallback(
+    () =>
+      setGameState((state) =>
+        canControl(state) && state.player.chargeStart === null
+          ? {
+              ...state,
+              player: { ...state.player, chargeStart: state.elapsed }
+            }
+          : state
+      ),
+    []
+  )
+  const triggerExplosion = React.useCallback(
+    () => setGameState(detonatePlayer),
+    []
+  )
 
   return (
-    <GameContext.Provider value={contextValue}>{children}</GameContext.Provider>
+    <GameContext.Provider
+      value={{
+        gameState,
+        bestScore,
+        storageError,
+        startGame,
+        pauseGame,
+        resumeGame,
+        resetGame,
+        setMode,
+        updatePlayer,
+        setMovement,
+        beginCharge,
+        triggerExplosion
+      }}>
+      {children}
+    </GameContext.Provider>
   )
 }
 
 export function useGame() {
   const context = React.useContext(GameContext)
-  if (!context) {
-    throw new Error('useGame must be used within GameProvider')
-  }
+  if (!context) throw new Error('useGame must be used within GameProvider')
   return context
-}
-
-function createInitialGameState(): GameState {
-  return {
-    player: createInitialPlayer(),
-    enemies: [],
-    explosions: [],
-    score: 0,
-    lives: GAME_CONFIG.PLAYER_INITIAL_LIVES,
-    level: 1,
-    isPaused: true,
-    isGameOver: false,
-    chainMultiplier: 1,
-    maxChainDepth: 0,
-    lastEnemySpawn: Date.now()
-  }
-}
-
-function createInitialPlayer(): PlayerShip {
-  return {
-    id: 'player',
-    position: {
-      x: GAME_CONFIG.CANVAS_WIDTH / 2,
-      y: GAME_CONFIG.CANVAS_HEIGHT / 2
-    },
-    velocity: { dx: 0, dy: 0 },
-    radius: GAME_CONFIG.PLAYER_RADIUS,
-    active: true,
-    lives: GAME_CONFIG.PLAYER_INITIAL_LIVES,
-    isExploding: false,
-    explosionStartTime: null,
-    explosionRadius: 0
-  }
 }

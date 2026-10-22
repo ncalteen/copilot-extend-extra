@@ -5,7 +5,7 @@
 
 import { z } from 'zod'
 import { ThemeMode } from '@/lib/theme'
-import { DifficultyLevel } from '@/lib/difficulty'
+import type { GameMode } from '@/types/game'
 
 /**
  * Settings schema version for migration purposes
@@ -56,7 +56,7 @@ export interface AudioSettings {
  */
 export interface GameSettings {
   /** Difficulty level */
-  difficulty: DifficultyLevel
+  difficulty: GameMode
   /** Custom speed override (milliseconds per move) */
   customSpeed?: number
   /** Board dimensions */
@@ -164,7 +164,7 @@ export const ThemeModeSchema = z.union([
 /**
  * Zod schema for DifficultyLevel validation
  */
-export const DifficultyLevelSchema = z.nativeEnum(DifficultyLevel)
+export const DifficultyLevelSchema = z.enum(['standard', 'overdrive'])
 
 /**
  * Zod schema for theme settings
@@ -283,7 +283,7 @@ export const DEFAULT_AUDIO_SETTINGS: AudioSettings = {
  * Default game settings
  */
 export const DEFAULT_GAME_SETTINGS: GameSettings = {
-  difficulty: DifficultyLevel.MEDIUM,
+  difficulty: 'standard',
   boardSize: {
     width: 20,
     height: 20
