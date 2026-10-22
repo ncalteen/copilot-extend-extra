@@ -57,8 +57,6 @@ jobs:
 
       - name: Build
         id: build
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npm run build
 
       # - if: ${{ !cancelled() }}

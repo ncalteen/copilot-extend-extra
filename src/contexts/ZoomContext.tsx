@@ -1,7 +1,6 @@
 'use client'
 
 import * as React from 'react'
-import { applyZoomStyles } from '@/components/settings/ZoomControl'
 
 /**
  * Zoom context value interface
@@ -75,7 +74,9 @@ export function ZoomProvider({
     const element = targetElementRef.current
     if (!element) return
 
-    applyZoomStyles(element, zoomLevel, enablePanning)
+    element.style.transform = `scale(${zoomLevel})`
+    element.style.transformOrigin = 'top center'
+    element.style.cursor = enablePanning && isZoomed ? 'grab' : ''
 
     // Apply pan offset
     if (enablePanning && isZoomed) {

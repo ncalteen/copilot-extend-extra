@@ -1,50 +1,70 @@
 'use client'
 
+import { Clock3, Diamond, Trophy, Zap } from 'lucide-react'
 import { useGame } from '@/contexts/GameContext'
 
 export function GameHUD() {
-  const { gameState } = useGame()
-
+  const { gameState: state, bestScore } = useGame()
+  const seconds = Math.ceil(state.timeLeft / 1000)
   return (
-    <div className="w-full max-w-[800px]">
-      <div className="mb-4 rounded-lg border border-border bg-card p-4">
-        <h1 className="mb-4 text-2xl font-bold">Copilot Extend Extra</h1>
-
-        <div className="grid grid-cols-2 gap-4 text-sm md:grid-cols-4">
-          <div>
-            <div className="text-muted-foreground">Score</div>
-            <div className="text-xl font-bold">{gameState.score}</div>
-          </div>
-
-          <div>
-            <div className="text-muted-foreground">Lives</div>
-            <div className="text-xl font-bold">{gameState.lives}</div>
-          </div>
-
-          <div>
-            <div className="text-muted-foreground">Level</div>
-            <div className="text-xl font-bold">{gameState.level}</div>
-          </div>
-
-          <div>
-            <div className="text-muted-foreground">Max Chain</div>
-            <div className="text-xl font-bold">{gameState.maxChainDepth}</div>
-          </div>
+    <div className="game-hud">
+      <div className="stat score-stat">
+        <div className="stat-label">
+          <span className="tiny-square" /> SCORE
         </div>
-
-        {gameState.isGameOver && (
-          <div className="mt-4 rounded-md border border-destructive bg-destructive/10 p-3">
-            <p className="text-center font-bold text-destructive">Game Over!</p>
-          </div>
-        )}
+        <strong data-testid="score">
+          {String(state.score).padStart(7, '0')}
+        </strong>
+        <span className="stat-foot">
+          <Trophy /> BEST{' '}
+          <b>
+            {Math.max(bestScore, state.isGameOver ? state.score : 0)
+              .toLocaleString()
+              .padStart(7, '0')}
+          </b>
+        </span>
       </div>
-
-      <div className="rounded-lg bg-muted/50 p-3 text-sm">
-        <p className="mb-2 font-semibold">Controls:</p>
-        <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
-          <p>• WASD or Arrow Keys - Move</p>
-          <p>• Space - Explode</p>
+      <div className={`stat ${seconds <= 15 ? 'time-warning' : ''}`}>
+        <div className="stat-label">
+          <Clock3 /> TIME REMAINING
         </div>
+        <strong data-testid="timer">
+          {String(Math.floor(seconds / 60)).padStart(2, '0')}
+          <span className="stat-colon">:</span>
+          {String(seconds % 60).padStart(2, '0')}
+          <small>.{Math.floor((state.timeLeft % 1000) / 100)}</small>
+        </strong>
+        <span className="stat-foot">EVERY SECOND COUNTS</span>
+      </div>
+      <div className="stat">
+        <div className="stat-label">
+          <Diamond /> STOCK
+        </div>
+        <strong data-testid="stock">
+          {String(state.lives).padStart(2, '0')}
+          <span className="stock-diamonds">
+            {Array.from({ length: Math.min(state.lives, 7) }, (_, i) => (
+              <Diamond key={i} className="fill-current" />
+            ))}
+          </span>
+        </strong>
+        <span className="stat-foot">
+          NEXT EXTEND <b>{state.nextExtend.toLocaleString()}</b>
+        </span>
+      </div>
+      <div className="stat">
+        <div className="stat-label">
+          <Zap /> BEST CHAIN
+        </div>
+        <strong data-testid="best-chain">
+          {String(state.bestChain).padStart(2, '0')}
+          <small> HITS</small>
+        </strong>
+        <span className="stat-foot">
+          <span className="text-lime">
+            {state.chainCount ? 'CHAIN ACTIVE' : 'WAIT FOR YOUR MOMENT'}
+          </span>
+        </span>
       </div>
     </div>
   )
